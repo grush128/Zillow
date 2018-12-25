@@ -129,7 +129,7 @@ zl.close_connection(driver)
 file_name = "%s_%s.csv" % (str(time.strftime("%Y-%m-%d")), 
                            str(time.strftime("%H%M%S")))
 columns = ["address", "city", "state", "zip", "full_address", "price","zestimate", "sqft", "lot", "bedrooms", 
-           "bathrooms","year_built", "days_on_zillow", "sale_type", "url"]#,"link","distance_from_nate","distance_from_work","345 parkside dr erie pa 16511","998 Water Street, Erie, PA 16511"]
+           "bathrooms","year_built", "days_on_zillow", "sale_type", "url"]
 pd.DataFrame(output_data, columns = columns).drop_duplicates().to_csv(
     file_name, index = False, encoding = "UTF-8"
 )
