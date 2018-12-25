@@ -21,25 +21,12 @@ import time
 import pandas as pd
 import Zillow.zillow_functions as zl
 
-# Create list of search terms.
-# Function zipcodes_list() creates a list of US zip codes that will be 
-# passed to the scraper. For example, st = zipcodes_list(["10", "11", "606"])  
-# will yield every US zip code that begins with "10", begins with "11", or 
-# begins with "606", as a list object.
-# I recommend using zip codes, as they seem to be the best option for catching
-# as many house listings as possible. If you want to use search terms other 
-# than zip codes, simply skip running zipcodes_list() function below, and add 
-# a line of code to manually assign values to object st, for example:
-# st = ["Chicago", "New Haven, CT", "77005", "Jacksonville, FL"]
-# Keep in mind that, for each search term, the number of listings scraped is 
-# capped at 520, so in using a search term like "Chicago" the scraper would 
-# end up missing most of the results.
-# Param st_items can be either a list of zipcode strings, or a single zipcode 
-# string.
-st = zl.zipcodes_list(st_items = ["100", "770"])
+
+# string list of zip codes
+st = ["16510","16421","16511"]
 
 # Initialize the webdriver.
-driver = zl.init_driver("C:/Users/username/chromedriver.exe")
+driver = zl.init_driver("/mnt/d/Programming/Zillow/chromedriver.exe")
 
 # Go to www.zillow.com/homes
 zl.navigate_to_website(driver, "http://www.zillow.com/homes")
@@ -99,17 +86,29 @@ for idx, term in enumerate(st):
         # Zipcode
         new_obs.append(parser.get_zipcode())
         
+        # Full Address
+        new_obs.append("%s %s, %s %s" % (str(parser.get_street_address()),str(parser.get_city()),str(parser.get_state()),str(parser.get_zipcode())))
+
         # Price
         new_obs.append(parser.get_price())
+
+        # Zestimate
+        new_obs.append(parser.get_zestimate())
         
         # Sqft
         new_obs.append(parser.get_sqft())
+
+        #LotSize
+        new_obs.append(parser.get_lot()/43560)
         
         # Bedrooms
         new_obs.append(parser.get_bedrooms())
         
         # Bathrooms
         new_obs.append(parser.get_bathrooms())
+
+        # Year Built
+        new_obs.append(parser.get_year_built())
         
         # Days on the Market/Zillow
         new_obs.append(parser.get_days_on_market())
@@ -129,8 +128,8 @@ zl.close_connection(driver)
 # Write data to data frame, then to CSV file.
 file_name = "%s_%s.csv" % (str(time.strftime("%Y-%m-%d")), 
                            str(time.strftime("%H%M%S")))
-columns = ["address", "city", "state", "zip", "price", "sqft", "bedrooms", 
-           "bathrooms", "days_on_zillow", "sale_type", "url"]
+columns = ["address", "city", "state", "zip", "full_address", "price","zestimate", "sqft", "lot", "bedrooms", 
+           "bathrooms","year_built", "days_on_zillow", "sale_type", "url"]#,"link","distance_from_nate","distance_from_work","345 parkside dr erie pa 16511","998 Water Street, Erie, PA 16511"]
 pd.DataFrame(output_data, columns = columns).drop_duplicates().to_csv(
     file_name, index = False, encoding = "UTF-8"
 )

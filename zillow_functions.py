@@ -4,7 +4,8 @@
 import re as re
 import numpy as np
 import time
-import zipcode
+import os
+import json
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -13,23 +14,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 
-def zipcodes_list(st_items):
-    # If st_items is a single zipcode string.
-    if isinstance(st_items, str):
-        zc_objects = zipcode.islike(st_items)
-    # If st_items is a list of zipcode strings.
-    elif isinstance(st_items, list):
-        zc_objects = [n for i in st_items for n in zipcode.islike(str(i))]
-    else:
-        raise ValueError("arg 'st_items' must be of type str or list")
-    
-    output = [str(i).split(" ", 1)[1].split(">")[0] for i in zc_objects]
-    return(output)
-
 def init_driver(file_path):
-    # Starting maximized fixes https://github.com/ChrisMuir/Zillow/issues/1
+    # Starting maximized fixes https://github.com/ChrisMuir/Zillow/issues/1m
     options = webdriver.ChromeOptions()
     options.add_argument("--start-maximized")
+    options.add_argument('--ignore-certificate-errors')
+    options.add_argument('--ignore-ssl-errors')
+    os.environ["PATH"] += os.pathsep + file_path
     driver = webdriver.Chrome(executable_path=file_path, 
                               chrome_options=options)
     driver.wait = WebDriverWait(driver, 10)
@@ -178,6 +169,8 @@ class html_parser:
     def __init__(self, html):
         self.soup = BeautifulSoup(html, "lxml")
         self.card_info = self.get_card_info()
+        #print(str(self.get_bubble_info()))
+        self.bubble_info = json.loads(self.get_bubble_info())
     
     # For most listings, card_info will contain info on number of bedrooms, 
     # number of bathrooms, square footage, and sometimes price.
@@ -190,6 +183,15 @@ class html_parser:
         if self._is_empty(card):
             card = np.nan
         return(card)
+
+    def get_bubble_info(self):
+        try:
+            bubble = re.sub(".*(<!--)|(-->).*","",str(self.soup.find(lambda tag: tag.name == 'div' and tag['class'] == ['minibubble', 'template', 'hide']))).replace("\\-","-").replace("\\\\","\\")
+        except (ValueError, AttributeError):
+            bubble = np.nan
+        if self._is_empty(bubble):
+            bubble = np.nan
+        return(bubble)
     
     def get_street_address(self):
         try:
@@ -288,6 +290,36 @@ class html_parser:
         else:
             sqft = np.nan
         return(sqft)
+
+    def get_lot(self):
+        try:
+            # This can be found in the bubble
+            lot = self.bubble_info["homeInfo"]["lotSize"]
+        except (ValueError, IndexError, KeyError):
+            lot = np.nan
+        if lot <= 0:
+            lot = np.nan
+        return(lot)
+
+    def get_year_built(self):
+        try:
+            # This can be found in the bubble
+            built = self.bubble_info["homeInfo"]["yearBuilt"]
+        except (ValueError, IndexError, KeyError):
+            built = np.nan
+        if built <= 0:
+            built = np.nan
+        return(built)
+
+    def get_zestimate(self):
+        try:
+            # This can be found in the bubble
+            zestimate = self.bubble_info["homeInfo"]["zestimate"]
+        except (ValueError, IndexError, KeyError):
+            zestimate = np.nan
+        if zestimate <= 0:
+            zestimate = np.nan
+        return(zestimate)
     
     def get_bedrooms(self):
         beds = [n for n in self.card_info if any(["bd" in n, "tudio" in n])]
