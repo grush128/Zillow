@@ -43,6 +43,21 @@ Software Requirements/Info
 - The Selenium package requires a webdriver program. This code was written 
 using [Chromedriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) v2.25.
 
+Installing Dependencies
+-----------------------
+```
+pip3 install pandas
+pip3 install beautifulsoup4
+pip3 install selenium
+```
+
+Running
+-------
+From directory above project
+```
+python3 -m Zillow.zillow_runfile
+```
+
 Example of the output dataframe
 -------------------------------
 
